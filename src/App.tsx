@@ -51,6 +51,7 @@ export default function App() {
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSharedView, setIsSharedView] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
   // Check for URL parameters on mount
@@ -72,6 +73,7 @@ export default function App() {
         date: date || new Date().toLocaleDateString('bn-BD'),
         serial: serial || `SL-${Math.floor(100000 + Math.random() * 900000)}`
       });
+      setIsSharedView(true);
     }
   }, []);
 
@@ -176,27 +178,29 @@ export default function App() {
 
       <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-amber-400 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)]">
-              <div className="w-8 h-8 bg-[#0a192f] rounded-full translate-x-2" />
+        {!isSharedView && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-8"
+          >
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-amber-400 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)]">
+                <div className="w-8 h-8 bg-[#0a192f] rounded-full translate-x-2" />
+              </div>
+              <h1 className="text-3xl md:text-5xl font-black text-amber-400 leading-tight">
+                ডিজিটাল সালামি<br />ইনভয়েস জেনারেটর
+              </h1>
+              <div className="w-12 h-12 bg-amber-400 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)]">
+                <div className="w-8 h-8 bg-[#0a192f] rounded-full translate-x-2" />
+              </div>
             </div>
-            <h1 className="text-3xl md:text-5xl font-black text-amber-400 leading-tight">
-              ডিজিটাল সালামি<br />ইনভয়েস জেনারেটর
-            </h1>
-            <div className="w-12 h-12 bg-amber-400 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)]">
-              <div className="w-8 h-8 bg-[#0a192f] rounded-full translate-x-2" />
+            
+            <div className="inline-block bg-gradient-to-r from-amber-500 to-amber-600 px-8 py-2 rounded-full shadow-lg">
+              <span className="text-slate-900 font-black tracking-[0.2em] text-sm">EID-UL-FITR 2026</span>
             </div>
-          </div>
-          
-          <div className="inline-block bg-gradient-to-r from-amber-500 to-amber-600 px-8 py-2 rounded-full shadow-lg">
-            <span className="text-slate-900 font-black tracking-[0.2em] text-sm">EID-UL-FITR 2026</span>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
 
         <AnimatePresence mode="wait">
           {!invoice ? (
@@ -428,40 +432,46 @@ export default function App() {
 
               {/* Action Buttons */}
               <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
-                <button
-                  onClick={copyLink}
-                  className="flex-1 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white font-bold py-5 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl"
-                >
-                  {isCopied ? <CheckCircle2 size={22} className="text-emerald-400" /> : <Share2 size={22} className="text-amber-400" />}
-                  {isCopied ? 'লিঙ্ক কপি হয়েছে!' : 'শেয়ার লিঙ্ক কপি করুন'}
-                </button>
+                {!isSharedView && (
+                  <button
+                    onClick={copyLink}
+                    className="flex-1 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white font-bold py-5 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl"
+                  >
+                    {isCopied ? <CheckCircle2 size={22} className="text-emerald-400" /> : <Share2 size={22} className="text-amber-400" />}
+                    {isCopied ? 'লিঙ্ক কপি হয়েছে!' : 'শেয়ার লিঙ্ক কপি করুন'}
+                  </button>
+                )}
                 
                 <button
                   onClick={downloadImage}
-                  className="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-5 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl shadow-amber-900/20"
+                  className={`flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-5 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl shadow-amber-900/20 ${isSharedView ? 'max-w-md mx-auto w-full' : ''}`}
                 >
                   <Download size={22} /> ছবি হিসেবে সেভ করুন
                 </button>
               </div>
 
-              <div className="flex justify-center">
-                <button
-                  onClick={reset}
-                  className="inline-flex items-center gap-2 text-slate-500 hover:text-white transition-colors font-bold text-sm bg-slate-900/30 px-6 py-3 rounded-full border border-slate-800"
-                >
-                  <RefreshCw size={16} /> নতুন ইনভয়েস তৈরি করুন
-                </button>
-              </div>
+              {!isSharedView && (
+                <div className="flex justify-center">
+                  <button
+                    onClick={reset}
+                    className="inline-flex items-center gap-2 text-slate-500 hover:text-white transition-colors font-bold text-sm bg-slate-900/30 px-6 py-3 rounded-full border border-slate-800"
+                  >
+                    <RefreshCw size={16} /> নতুন ইনভয়েস তৈরি করুন
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Footer */}
-        <footer className="mt-20 pb-10 text-center">
-          <p className="text-slate-600 text-sm font-bold tracking-widest uppercase">
-            EID MUBARAK | সালামি ইনভয়েস © ২০২৬
-          </p>
-        </footer>
+        {!isSharedView && (
+          <footer className="mt-20 pb-10 text-center">
+            <p className="text-slate-600 text-sm font-bold tracking-widest uppercase">
+              EID MUBARAK | সালামি ইনভয়েস © ২০২৬
+            </p>
+          </footer>
+        )}
       </div>
       
       <style>{`
