@@ -75,7 +75,8 @@ export default function App() {
     relation: RELATIONSHIPS[0],
     otherRelation: '',
     selectedTerms: [] as string[],
-    customAmount: ''
+    customAmount: '',
+    customApplication: ''
   });
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [isCopied, setIsCopied] = useState(false);
@@ -143,7 +144,7 @@ export default function App() {
         date: new Date().toLocaleDateString('bn-BD'),
         serial: `SL-${Math.floor(100000 + Math.random() * 900000)}`,
         terms: formData.selectedTerms.length > 0 ? formData.selectedTerms : undefined,
-        application: FUNNY_APPLICATIONS[formData.relation] || FUNNY_APPLICATIONS['অন্যান্য']
+        application: formData.customApplication.trim() || (FUNNY_APPLICATIONS[formData.relation] || FUNNY_APPLICATIONS['অন্যান্য'])
       };
 
       setInvoice(newInvoice);
@@ -199,7 +200,7 @@ export default function App() {
 
   const reset = () => {
     setInvoice(null);
-    setFormData({ from: '', to: '', relation: RELATIONSHIPS[0], otherRelation: '', selectedTerms: [], customAmount: '' });
+    setFormData({ from: '', to: '', relation: RELATIONSHIPS[0], otherRelation: '', selectedTerms: [], customAmount: '', customApplication: '' });
     window.history.pushState({}, '', window.location.pathname);
   };
 
@@ -328,6 +329,18 @@ export default function App() {
                         </motion.div>
                       )}
                     </AnimatePresence>
+                  </div>
+
+                  <div className="group">
+                    <label className="block text-sm font-bold text-amber-400 mb-2 ml-1 flex items-center gap-2">
+                      <Sparkles size={18} className="text-purple-400" /> আপনার বিশেষ বার্তা (ঐচ্ছিক)
+                    </label>
+                    <textarea
+                      value={formData.customApplication}
+                      onChange={(e) => setFormData({ ...formData, customApplication: e.target.value })}
+                      className="w-full bg-[#1d2d44] border border-transparent rounded-xl px-5 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all text-lg resize-none h-24"
+                      placeholder="এখানে আপনার নিজের কোনো মজার মেসেজ লিখতে পারেন... (খালি রাখলে অটোমেটিক মেসেজ সেট হবে)"
+                    />
                   </div>
 
                   <div className="group">
@@ -510,7 +523,7 @@ export default function App() {
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-4">
                     <div className="w-2 h-2 rounded-full bg-slate-200" />
                   </div>
-                  {/* <p className="text-xs font-bold text-slate-400 italic">ডিজিটাল সিগনেচার: {invoice.from}</p> */}
+                  <p className="text-xs font-bold text-slate-400 italic">ডিজিটাল সিগনেচার: {invoice.from}</p>
                 </div>
               </div>
 
