@@ -32,7 +32,7 @@ interface InvoiceData {
   amount: number;
   date: string;
   serial: string;
-  term?: string;
+  terms?: string[];
 }
 
 const RELATIONSHIPS = [
@@ -60,7 +60,7 @@ export default function App() {
     to: '',
     relation: RELATIONSHIPS[0],
     otherRelation: '',
-    selectedTerm: FUNNY_TERMS[0],
+    selectedTerms: [] as string[],
     customAmount: ''
   });
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
@@ -72,13 +72,16 @@ export default function App() {
   // Check for URL parameters on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const pathName = window.location.pathname.substring(1); // Remove leading slash
+    const decodedPathName = pathName ? decodeURIComponent(pathName) : null;
+    
     const from = params.get('from');
-    const to = params.get('to');
+    const to = decodedPathName || params.get('to');
     const relation = params.get('relation');
     const amount = params.get('amount');
     const date = params.get('date');
     const serial = params.get('serial');
-    const term = params.get('term');
+    const terms = params.get('terms');
 
     if (from && to && relation && amount) {
       setInvoice({
@@ -88,7 +91,7 @@ export default function App() {
         amount: parseInt(amount),
         date: date || new Date().toLocaleDateString('bn-BD'),
         serial: serial || `SL-${Math.floor(100000 + Math.random() * 900000)}`,
-        term: term || undefined
+        terms: terms ? JSON.parse(decodeURIComponent(terms)) : undefined
       });
       setIsSharedView(true);
     }
@@ -123,7 +126,7 @@ export default function App() {
         amount: finalAmount,
         date: new Date().toLocaleDateString('bn-BD'),
         serial: `SL-${Math.floor(100000 + Math.random() * 900000)}`,
-        term: formData.selectedTerm !== FUNNY_TERMS[0] ? formData.selectedTerm : undefined
+        terms: formData.selectedTerms.length > 0 ? formData.selectedTerms : undefined
       };
 
       setInvoice(newInvoice);
@@ -142,14 +145,19 @@ export default function App() {
     if (!invoice) return;
     const params = new URLSearchParams({
       from: invoice.from,
+      // 'to' is now in the path, but we keep it in params as fallback
       to: invoice.to,
       relation: invoice.relation,
       amount: invoice.amount.toString(),
       date: invoice.date,
       serial: invoice.serial,
-      ...(invoice.term && { term: invoice.term })
+      ...(invoice.terms && { terms: encodeURIComponent(JSON.stringify(invoice.terms)) })
     });
-    const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+    
+    // Create personalized path: origin/RecipientName
+    const personalizedPath = `/${encodeURIComponent(invoice.to)}`;
+    const url = `${window.location.origin}${personalizedPath}?${params.toString()}`;
+    
     navigator.clipboard.writeText(url);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
@@ -173,7 +181,7 @@ export default function App() {
 
   const reset = () => {
     setInvoice(null);
-    setFormData({ from: '', to: '', relation: RELATIONSHIPS[0], otherRelation: '', selectedTerm: FUNNY_TERMS[0], customAmount: '' });
+    setFormData({ from: '', to: '', relation: RELATIONSHIPS[0], otherRelation: '', selectedTerms: [], customAmount: '' });
     window.history.pushState({}, '', window.location.pathname);
   };
 
@@ -305,22 +313,33 @@ export default function App() {
                   </div>
 
                   <div className="group">
-                    <label className="block text-sm font-bold text-amber-400 mb-2 ml-1 flex items-center gap-2">
-                      <AlertCircle size={18} className="text-orange-400" /> বিশেষ শর্ত (ঐচ্ছিক)
+                    <label className="block text-sm font-bold text-amber-400 mb-3 ml-1 flex items-center gap-2">
+                      <AlertCircle size={18} className="text-orange-400" /> বিশেষ শর্তাবলি (একাধিক সিলেক্ট করতে পারেন)
                     </label>
-                    <div className="relative">
-                      <select
-                        value={formData.selectedTerm}
-                        onChange={(e) => setFormData({ ...formData, selectedTerm: e.target.value })}
-                        className="w-full bg-[#1d2d44] border border-transparent rounded-xl px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all text-sm appearance-none cursor-pointer"
-                      >
-                        {FUNNY_TERMS.map((term) => (
-                          <option key={term} value={term} className="bg-[#112240]">{term}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                      </div>
+                    <div className="grid gap-2 max-h-48 overflow-y-auto p-2 bg-[#1d2d44] rounded-xl border border-slate-800 custom-scrollbar">
+                      {FUNNY_TERMS.slice(1).map((term) => (
+                        <label 
+                          key={term} 
+                          className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
+                            formData.selectedTerms.includes(term) 
+                              ? 'bg-amber-500/10 border-amber-500/50 text-amber-200' 
+                              : 'bg-[#112240]/50 border-transparent text-slate-400 hover:bg-[#112240]'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="mt-1 w-4 h-4 rounded border-slate-700 text-amber-500 focus:ring-amber-500 bg-slate-800"
+                            checked={formData.selectedTerms.includes(term)}
+                            onChange={(e) => {
+                              const newTerms = e.target.checked
+                                ? [...formData.selectedTerms, term]
+                                : formData.selectedTerms.filter(t => t !== term);
+                              setFormData({ ...formData, selectedTerms: newTerms });
+                            }}
+                          />
+                          <span className="text-xs font-medium leading-relaxed">{term}</span>
+                        </label>
+                      ))}
                     </div>
                   </div>
 
@@ -442,14 +461,18 @@ export default function App() {
                   </div>
                 </div>
 
-                {invoice.term && (
+                {invoice.terms && invoice.terms.length > 0 && (
                   <div className="space-y-4 mb-12 relative">
                     <h3 className="text-xs font-black text-slate-900 flex items-center gap-2 uppercase tracking-widest">
-                      <AlertCircle size={14} className="text-orange-500" /> বিশেষ শর্ত:
+                      <AlertCircle size={14} className="text-orange-500" /> বিশেষ শর্তাবলি:
                     </h3>
-                    <div className="flex gap-3 text-xs text-slate-500 leading-relaxed font-medium bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                      <span className="text-amber-500 font-bold">১.</span>
-                      <p>{invoice.term}</p>
+                    <div className="grid gap-3">
+                      {invoice.terms.map((term, i) => (
+                        <div key={i} className="flex gap-3 text-xs text-slate-500 leading-relaxed font-medium bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          <span className="text-amber-500 font-bold">{i + 1}.</span>
+                          <p>{term}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -510,6 +533,16 @@ export default function App() {
         @keyframes pulse {
           0%, 100% { opacity: 0.2; }
           50% { opacity: 0.5; }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #112240;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #fbbf24;
+          border-radius: 10px;
         }
       `}</style>
     </div>
