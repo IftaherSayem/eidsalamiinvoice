@@ -32,10 +32,24 @@ interface InvoiceData {
   amount: number;
   date: string;
   serial: string;
+  term?: string;
 }
 
 const RELATIONSHIPS = [
   'বড় ভাই', 'আপু', 'মামা', 'চাচা', 'দুলাভাই', 'খালামণি', 'ফুপি', 'ক্রাশ', 'বন্ধু', 'অন্যান্য'
+];
+
+const FUNNY_TERMS = [
+  'কোনো শর্ত নেই',
+  'বিকাশ বা নগদে টাকা না পাঠালে ঈদের দিন আপনার বাসায় গিয়ে সব সেমাই খেয়ে ফেলা হবে।',
+  'টাকা না দিলে আপনার সব গোপন কথা সবার কাছে ফাঁস করে দেওয়া হবে।',
+  'এই ইনভয়েসটি পাওয়ার ২৪ ঘণ্টার মধ্যে পেমেন্ট না করলে পরবর্তী ঈদে সালামি ডাবল হয়ে যাবে।',
+  'সালামি না দিলে আপনার ক্রাশের সাথে আপনার বিয়ে হবে না (গ্যারান্টিড)।',
+  'সালামি না দিলে ঈদের দিন আপনার সাথে কোনো সেলফি তোলা হবে না।',
+  'এই ইনভয়েসটি ইগনোর করলে আপনার কপালে সারা বছর সিঙ্গেল থাকা নিশ্চিত।',
+  'সালামি না দিলে আপনার পছন্দের বিরিয়ানির প্যাকেট আমি খেয়ে ফেলব।',
+  'সালামি না দিলে আপনার ফোনের চার্জার চুরি করে নিয়ে যাব।',
+  'টাকা না দিলে আপনার ফেসবুক প্রোফাইল হ্যাক করার হুমকি দেওয়া হলো (মজা করছি)।'
 ];
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000, 20000];
@@ -46,6 +60,7 @@ export default function App() {
     to: '',
     relation: RELATIONSHIPS[0],
     otherRelation: '',
+    selectedTerm: FUNNY_TERMS[0],
     customAmount: ''
   });
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
@@ -63,6 +78,7 @@ export default function App() {
     const amount = params.get('amount');
     const date = params.get('date');
     const serial = params.get('serial');
+    const term = params.get('term');
 
     if (from && to && relation && amount) {
       setInvoice({
@@ -71,7 +87,8 @@ export default function App() {
         relation,
         amount: parseInt(amount),
         date: date || new Date().toLocaleDateString('bn-BD'),
-        serial: serial || `SL-${Math.floor(100000 + Math.random() * 900000)}`
+        serial: serial || `SL-${Math.floor(100000 + Math.random() * 900000)}`,
+        term: term || undefined
       });
       setIsSharedView(true);
     }
@@ -105,7 +122,8 @@ export default function App() {
         relation: finalRelation,
         amount: finalAmount,
         date: new Date().toLocaleDateString('bn-BD'),
-        serial: `SL-${Math.floor(100000 + Math.random() * 900000)}`
+        serial: `SL-${Math.floor(100000 + Math.random() * 900000)}`,
+        term: formData.selectedTerm !== FUNNY_TERMS[0] ? formData.selectedTerm : undefined
       };
 
       setInvoice(newInvoice);
@@ -128,7 +146,8 @@ export default function App() {
       relation: invoice.relation,
       amount: invoice.amount.toString(),
       date: invoice.date,
-      serial: invoice.serial
+      serial: invoice.serial,
+      ...(invoice.term && { term: invoice.term })
     });
     const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
     navigator.clipboard.writeText(url);
@@ -154,7 +173,7 @@ export default function App() {
 
   const reset = () => {
     setInvoice(null);
-    setFormData({ from: '', to: '', relation: RELATIONSHIPS[0], otherRelation: '', customAmount: '' });
+    setFormData({ from: '', to: '', relation: RELATIONSHIPS[0], otherRelation: '', selectedTerm: FUNNY_TERMS[0], customAmount: '' });
     window.history.pushState({}, '', window.location.pathname);
   };
 
@@ -287,6 +306,26 @@ export default function App() {
 
                   <div className="group">
                     <label className="block text-sm font-bold text-amber-400 mb-2 ml-1 flex items-center gap-2">
+                      <AlertCircle size={18} className="text-orange-400" /> বিশেষ শর্ত (ঐচ্ছিক)
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={formData.selectedTerm}
+                        onChange={(e) => setFormData({ ...formData, selectedTerm: e.target.value })}
+                        className="w-full bg-[#1d2d44] border border-transparent rounded-xl px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all text-sm appearance-none cursor-pointer"
+                      >
+                        {FUNNY_TERMS.map((term) => (
+                          <option key={term} value={term} className="bg-[#112240]">{term}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="group">
+                    <label className="block text-sm font-bold text-amber-400 mb-2 ml-1 flex items-center gap-2">
                       <Banknote size={18} className="text-yellow-500" /> সালামির পরিমাণ (টাকা)
                     </label>
                     <div className="relative mb-4">
@@ -403,24 +442,17 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="space-y-4 mb-12 relative">
-                  <h3 className="text-xs font-black text-slate-900 flex items-center gap-2 uppercase tracking-widest">
-                    <AlertCircle size={14} className="text-orange-500" /> বিশেষ শর্তাবলি:
-                  </h3>
-                  <div className="grid gap-3">
-                    {[
-                      'বিকাশ বা নগদে টাকা না পাঠালে ঈদের দিন আপনার বাসায় গিয়ে সব সেমাই খেয়ে ফেলা হবে।',
-                      'টাকা না দিলে আপনার সব গোপন কথা সবার কাছে ফাঁস করে দেওয়া হবে।',
-                      'এই ইনভয়েসটি পাওয়ার ২৪ ঘণ্টার মধ্যে পেমেন্ট না করলে পরবর্তী ঈদে সালামি ডাবল হয়ে যাবে।',
-                      'সালামি না দিলে আপনার ক্রাশের সাথে আপনার বিয়ে হবে না (গ্যারান্টিড)।'
-                    ].map((term, i) => (
-                      <div key={i} className="flex gap-3 text-xs text-slate-500 leading-relaxed font-medium">
-                        <span className="text-amber-500 font-bold">{i + 1}.</span>
-                        <p>{term}</p>
-                      </div>
-                    ))}
+                {invoice.term && (
+                  <div className="space-y-4 mb-12 relative">
+                    <h3 className="text-xs font-black text-slate-900 flex items-center gap-2 uppercase tracking-widest">
+                      <AlertCircle size={14} className="text-orange-500" /> বিশেষ শর্ত:
+                    </h3>
+                    <div className="flex gap-3 text-xs text-slate-500 leading-relaxed font-medium bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <span className="text-amber-500 font-bold">১.</span>
+                      <p>{invoice.term}</p>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="text-center pt-8 border-t-2 border-slate-100 relative">
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-4">
