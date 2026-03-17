@@ -33,11 +33,25 @@ interface InvoiceData {
   date: string;
   serial: string;
   terms?: string[];
+  application?: string;
 }
 
 const RELATIONSHIPS = [
   'বড় ভাই', 'আপু', 'মামা', 'চাচা', 'দুলাভাই', 'খালামণি', 'ফুপি', 'ক্রাশ', 'বন্ধু', 'অন্যান্য'
 ];
+
+const FUNNY_APPLICATIONS: Record<string, string> = {
+  'বড় ভাই': 'সম্মানিত বড় ভাই, আপনার পকেট অনেক বড়, কিন্তু আমার পকেট একদম খালি। এই ঈদে আপনার পকেটের ভার একটু কমাতে চাই। বিনীত নিবেদন, কিছু সালামি দিয়ে ছোট ভাইয়ের মুখে হাসি ফোটান।',
+  'আপু': 'প্রিয় আপু, দুলাভাই তো দিবেই, কিন্তু আপনার হাতের সালামি না পেলে ঈদের আনন্দই মাটি। আপনার জমানো টাকা থেকে সামান্য কিছু দান করে এই অভাগা ছোট ভাই/বোনকে ধন্য করুন।',
+  'মামা': 'প্রিয় মামা, ভাগ্নে যখন বিপদে, মামা তখন পকেটে হাত দেয়! আমার পকেটে এখন মরুভূমির হাওয়া বইছে। এমতাবস্থায়, কিছু সালামি প্রদান করিয়া আপনার প্রিয় ভাগ্নেকে উদ্ধার করুন।',
+  'চাচা': 'শ্রদ্ধেয় চাচা, আপনার ভাতিজা বড়ই অর্থকষ্টে দিনাতিপাত করিতেছে। আপনার অঢেল সম্পদ হইতে কিঞ্চিৎ সালামি প্রদান করিলে পরকালে নেকি হাসিল হইবে (হয়তো!)।',
+  'দুলাভাই': 'প্রিয় দুলাভাই, আপুর কাছে তো অনেক খরচ করেন, শ্যালক/শ্যালিকার জন্য কি একটু মনটা বড় করা যায় না? সালামি না দিলে কিন্তু আপুর কাছে আপনার সব গোপন কথা বলে দেব!',
+  'খালামণি': 'প্রিয় খালামণি, আপনার হাতের রান্না যেমন সেরা, আপনার সালামিও যেন তেমনই সেরা হয়। আপনার আদরের ভাগ্নে/ভাগ্নির পকেটটা একটু গরম করে দিন না!',
+  'ফুপি': 'প্রিয় ফুপি, ফুপু মানেই তো বাড়তি আদর। সেই আদরের সাথে যদি কিছু কড়কড়ে নোট পাওয়া যেত, তবে ঈদের খুশি ডাবল হয়ে যেত। আপনার প্রিয় ভাতিজা/ভাতিজির আবদারটা রাখুন।',
+  'ক্রাশ': 'প্রিয় ক্রাশ, আপনার হাসিতে আমি ফিদা, কিন্তু আপনার সালামিতে আমি আরও বেশি ফিদা হব। সালামি না দিলে কিন্তু আনফলো করে দেওয়ার কঠিন সিদ্ধান্ত নিতে বাধ্য হব!',
+  'বন্ধু': 'দোস্ত, অনেক তো খাওয়ালি, এবার একটু সালামি দে। কৃপণতা ছাড়, পকেট বের কর। সালামি না দিলে ঈদের দিন তোর বাসায় গিয়ে সব বিরিয়ানি একাই খেয়ে ফেলব!',
+  'অন্যান্য': 'বিনীত নিবেদন এই যে, আমি আপনার অতি আদরের একজন মানুষ। বর্তমানে আমার পকেটে তীব্র অর্থসংকট চলিতেছে। এমতাবস্থায়, কিছু সালামি প্রদান করিয়া আমার পকেটকে সজীব করার আকুল আবেদন জানাচ্ছি।'
+};
 
 const FUNNY_TERMS = [
   'কোনো শর্ত নেই',
@@ -82,6 +96,7 @@ export default function App() {
     const date = params.get('date');
     const serial = params.get('serial');
     const terms = params.get('terms');
+    const application = params.get('app');
 
     if (from && to && relation && amount) {
       setInvoice({
@@ -91,7 +106,8 @@ export default function App() {
         amount: parseInt(amount),
         date: date || new Date().toLocaleDateString('bn-BD'),
         serial: serial || `SL-${Math.floor(100000 + Math.random() * 900000)}`,
-        terms: terms ? JSON.parse(decodeURIComponent(terms)) : undefined
+        terms: terms ? JSON.parse(decodeURIComponent(terms)) : undefined,
+        application: application || undefined
       });
       setIsSharedView(true);
     }
@@ -126,7 +142,8 @@ export default function App() {
         amount: finalAmount,
         date: new Date().toLocaleDateString('bn-BD'),
         serial: `SL-${Math.floor(100000 + Math.random() * 900000)}`,
-        terms: formData.selectedTerms.length > 0 ? formData.selectedTerms : undefined
+        terms: formData.selectedTerms.length > 0 ? formData.selectedTerms : undefined,
+        application: FUNNY_APPLICATIONS[formData.relation] || FUNNY_APPLICATIONS['অন্যান্য']
       };
 
       setInvoice(newInvoice);
@@ -151,7 +168,8 @@ export default function App() {
       amount: invoice.amount.toString(),
       date: invoice.date,
       serial: invoice.serial,
-      ...(invoice.terms && { terms: encodeURIComponent(JSON.stringify(invoice.terms)) })
+      ...(invoice.terms && { terms: encodeURIComponent(JSON.stringify(invoice.terms)) }),
+      ...(invoice.application && { app: invoice.application })
     });
     
     // Create personalized path: origin/RecipientName
@@ -461,6 +479,17 @@ export default function App() {
                   </div>
                 </div>
 
+                {invoice.application && (
+                  <div className="mb-10 p-6 bg-amber-50 rounded-3xl border-2 border-dashed border-amber-200 relative">
+                    <div className="absolute -top-3 left-6 bg-white px-3 text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                      ঈদ মোবারক
+                    </div>
+                    <p className="text-sm text-slate-700 leading-relaxed italic font-medium">
+                      "{invoice.application}"
+                    </p>
+                  </div>
+                )}
+
                 {invoice.terms && invoice.terms.length > 0 && (
                   <div className="space-y-4 mb-12 relative">
                     <h3 className="text-xs font-black text-slate-900 flex items-center gap-2 uppercase tracking-widest">
@@ -481,7 +510,7 @@ export default function App() {
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-4">
                     <div className="w-2 h-2 rounded-full bg-slate-200" />
                   </div>
-                  <p className="text-xs font-bold text-slate-400 italic">ডিজিটাল সিগনেচার: {invoice.from}</p>
+                  {/* <p className="text-xs font-bold text-slate-400 italic">ডিজিটাল সিগনেচার: {invoice.from}</p> */}
                 </div>
               </div>
 
